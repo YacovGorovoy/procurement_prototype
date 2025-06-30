@@ -25,6 +25,8 @@ export default function Home({ onNavigate }) {
       onNavigate('new-request-options');
     } else if (type === 'expense') {
       onNavigate('expense-form');
+    } else if (type === 'vendor-approval') {
+      onNavigate('vendor-approval-form');
     }
   };
 
