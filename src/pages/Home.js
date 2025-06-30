@@ -85,6 +85,7 @@ export default function Home({ onNavigate }) {
               open={dropdownOpen}
               setOpen={setDropdownOpen}
               options={dropdownOptions}
+              maxWidth="max-w-3xl"
             />
           </div>
 

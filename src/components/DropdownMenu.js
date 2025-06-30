@@ -19,7 +19,7 @@ export default function DropdownMenu({ buttonContent, options = [], open, setOpe
         {buttonContent}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-2 z-20 border">
+        <div className={"absolute right-0 mt-2 min-w-[16rem] max-w-3xl bg-white rounded-md shadow-lg py-2 z-20 border"}>
           {options.map((opt, idx) => (
             <React.Fragment key={idx}>
               <button
