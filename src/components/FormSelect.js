@@ -12,6 +12,8 @@ import React, { useState, useRef, useEffect } from 'react';
  * @param {string} searchPlaceholder - Placeholder for search input
  * @param {function} action - Optional action row: { label, onClick }
  * @param {boolean} disabled - Disabled state
+ * @param {string} selectedDisplay - Custom selected value display
+ * @param {function} onActionWithSearch - Optional callback for action, receives current search value
  */
 export default function FormSelect({
   label,
@@ -24,6 +26,8 @@ export default function FormSelect({
   searchPlaceholder = 'Search...',
   action, // { label, onClick }
   disabled = false,
+  selectedDisplay, // NEW: custom selected value display
+  onActionWithSearch, // NEW: callback for action with search value
   ...props
 }) {
   const [open, setOpen] = useState(false);
@@ -94,7 +98,7 @@ export default function FormSelect({
         {...props}
       >
         <span className={selectedOption ? '' : 'text-gray-400'}>
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedDisplay ? selectedDisplay : (selectedOption ? selectedOption.label : placeholder)}
         </span>
         <svg className={`w-5 h-5 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
       </button>
@@ -142,7 +146,11 @@ export default function FormSelect({
                 aria-selected={false}
                 className={`px-3 py-2 cursor-pointer border-t border-gray-100 text-blue-700 font-semibold ${highlighted === filtered.length ? 'bg-blue-50' : ''}`}
                 onMouseEnter={() => setHighlighted(filtered.length)}
-                onMouseDown={e => { e.preventDefault(); action.onClick && action.onClick(); setOpen(false); }}
+                onMouseDown={e => { e.preventDefault();
+                  if (onActionWithSearch) onActionWithSearch(search);
+                  action.onClick && action.onClick();
+                  setOpen(false);
+                }}
               >
                 {action.label}
               </li>

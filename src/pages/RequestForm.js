@@ -8,6 +8,7 @@ import FormInput from '../components/FormInput';
 import FormSelect from '../components/FormSelect';
 import FormTextarea from '../components/FormTextarea';
 import LineItemsTable from '../components/LineItemsTable';
+import Badge from '../components/Badge';
 import { 
   SUPPLIERS, 
   PURCHASE_TYPES, 
@@ -45,6 +46,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   });
   const [errors, setErrors] = useState({});
   const [isNewVendor, setIsNewVendor] = useState(false);
+  const [newVendorName, setNewVendorName] = useState('');
 
   useEffect(() => {
     // Load existing draft if draftId provided
@@ -120,6 +122,13 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   };
 
   const handleNext = () => {
+    // Sync newVendorName to formData.supplierInfo.companyName if needed
+    if (formData.supplier === 'new_vendor' && newVendorName && !formData.supplierInfo.companyName) {
+      setFormData(prev => ({
+        ...prev,
+        supplierInfo: { ...prev.supplierInfo, companyName: newVendorName }
+      }));
+    }
     if (validateCurrentStep()) {
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1);
@@ -154,6 +163,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   const handleSupplierChange = (value) => {
     setFormData(prev => ({ ...prev, supplier: value }));
     setIsNewVendor(value === 'new_vendor');
+    if (value !== 'new_vendor') setNewVendorName('');
   };
 
   const handleLineItemsChange = (items) => {
@@ -179,11 +189,26 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
               label="Supplier"
               value={formData.supplier}
               onChange={handleSupplierChange}
-              options={[...SUPPLIERS, { value: 'new_vendor', label: 'Add new vendor' }]}
+              options={SUPPLIERS}
               placeholder="Select supplier"
               required
               searchPlaceholder="Search suppliers..."
               action={{ label: 'Add new vendor', onClick: () => handleSupplierChange('new_vendor') }}
+              onActionWithSearch={
+                (search) => {
+                  setNewVendorName(search);
+                  setFormData(prev => ({ ...prev, supplier: 'new_vendor' }));
+                  setIsNewVendor(true);
+                }
+              }
+              selectedDisplay={
+                formData.supplier === 'new_vendor' && newVendorName
+                  ? <span className="flex items-center gap-2">
+                      {newVendorName}
+                      <Badge text="New vendor" color="bg-green-100 text-green-800" />
+                    </span>
+                  : undefined
+              }
             />
             {errors.supplier && <p className="text-red-500 text-sm">{errors.supplier}</p>}
             
