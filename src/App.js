@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import NewRequestOptions from './pages/NewRequestOptions';
 import AIPromptScreen from './pages/AIPromptScreen';
 import RequestForm from './pages/RequestForm';
+import VendorApprovalForm from './pages/VendorApprovalForm';
 import './App.css';
 
 function App() {
@@ -23,7 +24,9 @@ function App() {
       case 'ai-prompt':
         return <AIPromptScreen onNavigate={navigate} />;
       case 'request-form':
-        return <RequestForm onNavigate={navigate} draftId={pageData.draftId} aiData={pageData.aiData} />;
+        return <RequestForm onNavigate={navigate} draftId={pageData.draftId} aiData={pageData.aiData} supplier={pageData.supplier} />;
+      case 'vendor-approval-form':
+        return <VendorApprovalForm onNavigate={navigate} vendorName={pageData.vendorName} />;
       default:
         return <Home onNavigate={navigate} />;
     }

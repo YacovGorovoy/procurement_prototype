@@ -18,6 +18,7 @@ import Badge from './Badge';
  * @param {function} onSelect - Handler for selection
  * @param {string} badge - Optional badge text
  * @param {string} className - Additional classes
+ * @param {string} type - Request type ('purchase' or 'vendor-approval')
  */
 export default function RequestCard({
   company,
@@ -32,6 +33,7 @@ export default function RequestCard({
   onSelect,
   badge,
   className = '',
+  type = 'purchase',
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -49,11 +51,21 @@ export default function RequestCard({
       <div className="flex items-center space-x-4 w-1/3 min-w-0">
         <CustomCheckbox checked={selected} onChange={onSelect} />
         <div className="bg-gray-100 p-3 rounded-md flex flex-col items-center min-w-[56px]">
-          <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6" /></svg>
+          {type === 'vendor-approval' ? (
+            <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="#E6F0F8" />
+              <path d="M8 12l2 2 4-4" stroke="#2D6B9F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6" /></svg>
+          )}
         </div>
         <div className="min-w-0">
           {badge && <Badge text={badge} className="mb-1" />}
-          <p className="font-semibold text-gray-800 truncate">{company}</p>
+          <p className="font-semibold text-gray-800 truncate flex items-center">
+            {company}
+            {type === 'vendor-approval' && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">new vendor</span>}
+          </p>
           <p className="text-sm text-gray-500 truncate">{desc}</p>
         </div>
       </div>

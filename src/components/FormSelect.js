@@ -35,6 +35,7 @@ export default function FormSelect({
     opt.label.toLowerCase().includes(search.toLowerCase())
   );
   const selectedOption = options.find(opt => opt.value === value);
+  const wrapperRef = useRef();
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
@@ -48,6 +49,19 @@ export default function FormSelect({
       if (el) el.scrollIntoView({ block: 'nearest' });
     }
   }, [highlighted, open, filtered]);
+
+  // Click outside to close
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+        setSearch('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
 
   const handleSelect = (val) => {
     onChange && onChange(val);
@@ -77,7 +91,7 @@ export default function FormSelect({
   };
 
   return (
-    <div className={className + ' relative'}>
+    <div ref={wrapperRef} className={className + ' relative'}>
       {label && (
         <label className="block mb-1 font-medium text-gray-600">
           {label}{required && ' *'}

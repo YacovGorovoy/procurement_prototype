@@ -58,6 +58,16 @@ export default function Home({ onNavigate }) {
       onClick: () => handleNewRequest('purchase')
     },
     {
+      label: 'Approve a new vendor',
+      icon: (
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="#E6F0F8" />
+          <path d="M8 12l2 2 4-4" stroke="#2D6B9F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      onClick: () => handleNewRequest('vendor-approval')
+    },
+    {
       label: 'Submit an expense',
       icon: (
         <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -156,6 +166,7 @@ export default function Home({ onNavigate }) {
                     status={request.status}
                     onStatusClick={() => handleRequestClick(request)}
                     className="cursor-pointer"
+                    type={request.vendorApproval || request.type === 'vendor-approval' ? 'vendor-approval' : 'purchase'}
                   />
                 ))
               )}

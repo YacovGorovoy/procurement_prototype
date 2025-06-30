@@ -1,5 +1,5 @@
 // Dropdown menu for actions (e.g., New button)
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 /**
  * DropdownMenu for actions
@@ -10,8 +10,22 @@ import React from 'react';
  * @param {string} maxWidth - Tailwind max-width class for label (default 'max-w-xs')
  */
 export default function DropdownMenu({ buttonContent, options = [], open, setOpen, maxWidth = 'max-w-xs' }) {
+  const wrapperRef = useRef();
+
+  // Click outside to close
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
   return (
-    <div className="relative inline-block text-left">
+    <div ref={wrapperRef} className="relative inline-block text-left">
       <button
         onClick={() => setOpen(!open)}
         className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded px-4 py-2 focus:outline-none shadow"

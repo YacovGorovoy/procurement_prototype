@@ -26,7 +26,7 @@ export default function NewRequestOptions({ onNavigate }) {
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Create a new request</h1>
             <p className="text-gray-600 mb-8">Choose how you'd like to create your purchase request</p>
             
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
               {/* AI Option */}
               <div className="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleOptionSelect('ai')}>
                 <div className="flex items-center mb-4">
@@ -100,6 +100,45 @@ export default function NewRequestOptions({ onNavigate }) {
                 </ul>
                 <Button variant="secondary" className="w-full">
                   Start Manual Entry
+                </Button>
+              </div>
+
+              {/* Approve a new vendor Option */}
+              <div className="bg-white rounded-lg border border-blue-200 p-8 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onNavigate('vendor-approval-form')}>
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" fill="#E6F0F8" />
+                      <path d="M8 12l2 2 4-4" stroke="#2D6B9F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800">Approve a new vendor</h2>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Start the process to get a new vendor approved for future purchases or compliance.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-2 mb-6">
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Compliance and onboarding
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    No purchase required
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Fast-track vendor setup
+                  </li>
+                </ul>
+                <Button variant="secondary" className="w-full">
+                  Start Vendor Approval
                 </Button>
               </div>
             </div>

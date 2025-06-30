@@ -45,6 +45,8 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   });
   const [errors, setErrors] = useState({});
   const [isNewVendor, setIsNewVendor] = useState(false);
+  const [showVendorIntake, setShowVendorIntake] = useState(false);
+  const [vendorIntakeChoice, setVendorIntakeChoice] = useState('purchase');
 
   useEffect(() => {
     // Load existing draft if draftId provided
@@ -154,10 +156,20 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   const handleSupplierChange = (value) => {
     setFormData(prev => ({ ...prev, supplier: value }));
     setIsNewVendor(value === 'new_vendor');
+    setShowVendorIntake(value === 'new_vendor');
+    setVendorIntakeChoice('purchase');
   };
 
   const handleLineItemsChange = (items) => {
     setFormData(prev => ({ ...prev, lineItems: items }));
+  };
+
+  const handleVendorIntakeContinue = () => {
+    if (vendorIntakeChoice === 'vendor-approval') {
+      onNavigate('vendor-approval-form', { vendorName: formData.supplierInfo.companyName });
+    } else {
+      setShowVendorIntake(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -185,7 +197,22 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
               searchPlaceholder="Search suppliers..."
               action={{ label: 'Add new vendor', onClick: () => handleSupplierChange('new_vendor') }}
             />
-            {errors.supplier && <p className="text-red-500 text-sm">{errors.supplier}</p>}
+            {showVendorIntake && (
+              <div className="bg-blue-50 border border-blue-200 rounded p-4 my-4">
+                <p className="mb-2 font-medium">Do you want to just get this vendor approved for future use, or do you want to make a purchase from them now?</p>
+                <div className="flex items-center space-x-6 mb-2">
+                  <label className="flex items-center">
+                    <input type="radio" name="vendorIntakeChoice" checked={vendorIntakeChoice === 'purchase'} onChange={() => setVendorIntakeChoice('purchase')} />
+                    <span className="ml-2">Make a purchase</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="radio" name="vendorIntakeChoice" checked={vendorIntakeChoice === 'vendor-approval'} onChange={() => setVendorIntakeChoice('vendor-approval')} />
+                    <span className="ml-2">Just get vendor approved</span>
+                  </label>
+                </div>
+                <Button variant="primary" onClick={handleVendorIntakeContinue}>Continue</Button>
+              </div>
+            )}
             
             <FormSelect
               label="Purchase Type"
