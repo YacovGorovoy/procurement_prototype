@@ -13,7 +13,7 @@ export default function Header({ sectionTitle = 'Home', companyName = 'Company',
   const [langOpen, setLangOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   return (
-    <header className="flex justify-between items-center p-4 border-b bg-white w-full">
+    <header className="flex justify-between items-center p-4 pl-8 border-b bg-white w-full">
       {/* Section title left-aligned */}
       <Typography variant="h2" className="text-gray-900">{sectionTitle}</Typography>
       <div className="flex items-center space-x-4">

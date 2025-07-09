@@ -17,8 +17,10 @@ import {
   getDraft, 
   generateDraftId,
   saveCurrentDraft,
-  clearCurrentDraft
+  clearCurrentDraft,
+  SAMPLE_HOME_REQUESTS
 } from '../utils/mockData';
+import { localDB } from '../utils/localDB';
 
 export default function RequestForm({ onNavigate, draftId, aiData }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -51,9 +53,19 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   useEffect(() => {
     // Load existing draft if draftId provided
     if (draftId) {
-      const existingDraft = getDraft(draftId);
+      const existingDraft = localDB.getById(draftId);
       if (existingDraft) {
-        setFormData(existingDraft);
+        // Synthesize lineItems if missing
+        let lineItems = existingDraft.lineItems;
+        if (!lineItems) {
+          let amt = 0;
+          if (existingDraft.amount) {
+            const match = String(existingDraft.amount).match(/([\d,.]+)/);
+            amt = match ? parseFloat(match[1].replace(/,/g, '')) : 0;
+          }
+          lineItems = [{ currency: 'USD', amount: amt, quantity: '1', desc: 'demo' }];
+        }
+        setFormData({ ...existingDraft, lineItems });
         setIsNewVendor(existingDraft.supplier === 'new_vendor');
         if (existingDraft.supplier === 'new_vendor') {
           // Set newVendorName from vendor field if present
@@ -168,19 +180,25 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
     }
     const isNewVendorFlag = formData.supplier === 'new_vendor';
     // Save draft with vendor and isNewVendor fields
-    saveDraft({
+    const updatedDraft = {
       ...formData,
       vendor,
       isNewVendor: isNewVendorFlag,
-    });
+    };
+    // Update in localDB
+    localDB.update(formData.id, updatedDraft);
     onNavigate('home');
   };
 
   const handleSubmit = () => {
     if (validateCurrentStep()) {
       // Save as submitted request (in real app, this would go to backend)
-      console.log('Submitting request:', formData);
-      clearCurrentDraft();
+      const updatedDraft = {
+        ...formData,
+        status: 'Pending approval',
+        updatedAt: new Date().toISOString(),
+      };
+      localDB.update(formData.id, updatedDraft);
       onNavigate('home');
     }
   };
@@ -194,6 +212,24 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   const handleLineItemsChange = (items) => {
     setFormData(prev => ({ ...prev, lineItems: items }));
   };
+
+  // Merge all vendors from SUPPLIERS, SAMPLE_HOME_REQUESTS, and all requests in localDB
+  const allVendorsSet = new Set([
+    ...SUPPLIERS.map(s => s.label),
+    ...SAMPLE_HOME_REQUESTS.map(r => r.vendor),
+    ...localDB.getAll().map(r => r.vendor)
+  ]);
+  const allVendors = Array.from(allVendorsSet).filter(Boolean);
+  const vendorOptions = allVendors.map(vendor => {
+    const supplier = SUPPLIERS.find(s => s.label === vendor);
+    return supplier
+      ? { value: supplier.value, label: supplier.label }
+      : { value: vendor, label: vendor };
+  });
+  vendorOptions.push({ value: 'new_vendor', label: 'Add new vendor...' });
+  // Sort vendor options alphabetically (except 'Add new vendor...' stays last)
+  const sortedVendorOptions = vendorOptions.slice(0, -1).sort((a, b) => a.label.localeCompare(b.label));
+  sortedVendorOptions.push(vendorOptions[vendorOptions.length - 1]);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -212,9 +248,14 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
             
             <FormSelect
               label="Supplier"
-              value={formData.supplier}
+              value={(() => {
+                // Try to match supplier value, otherwise match by vendor label
+                if (formData.supplier) return formData.supplier;
+                const found = sortedVendorOptions.find(opt => opt.label === formData.vendor);
+                return found ? found.value : '';
+              })()}
               onChange={handleSupplierChange}
-              options={SUPPLIERS}
+              options={sortedVendorOptions}
               placeholder="Select supplier"
               required
               searchPlaceholder="Search suppliers..."
@@ -241,7 +282,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
               label="Purchase Type"
               value={formData.purchaseType}
               onChange={(value) => setFormData(prev => ({ ...prev, purchaseType: value }))}
-              options={PURCHASE_TYPES}
+              options={[...PURCHASE_TYPES].sort((a, b) => a.label.localeCompare(b.label))}
               placeholder="Select purchase type"
               required
             />
@@ -251,7 +292,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
               label="Subsidiary"
               value={formData.subsidiary}
               onChange={(value) => setFormData(prev => ({ ...prev, subsidiary: value }))}
-              options={SUBSIDIARIES}
+              options={[...SUBSIDIARIES].sort((a, b) => a.label.localeCompare(b.label))}
               placeholder="Select subsidiary"
               required
             />
@@ -426,17 +467,19 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={process.env.PUBLIC_URL + '/logo192.png'} />
-      <div className="flex-1 flex">
-        <div className="w-64 bg-white border-r border-gray-200 p-6">
-          <BackLink onClick={handleBack}>Back</BackLink>
-          <Stepper steps={steps} onStepClick={setCurrentStep} />
-        </div>
-        
-        <div className="flex-1 flex flex-col">
-          <Header sectionTitle="Purchase" companyName="YacovProcPayer" userAvatar={process.env.PUBLIC_URL + '/logo192.png'} userEmail="yacov.gorovoy@tipalti.com" />
-          
-          <div className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto">
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Header bar spanning full width */}
+        <Header sectionTitle="Create purchase request" />
+        {/* Main content: Stepper left, form right */}
+        <div className="flex flex-1 w-full pl-8 pr-8 py-10">
+          {/* Stepper on the left */}
+          <div className="w-64 pr-8">
+            <BackLink onClick={handleBack}>Back</BackLink>
+            <Stepper steps={steps} onStepClick={setCurrentStep} />
+          </div>
+          {/* Form content on the right */}
+          <div className="flex-1 flex flex-col">
+            <div className="max-w-3xl">
               <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-800 mb-2">
                   {steps[currentStep]?.label}
@@ -448,15 +491,12 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
                   {currentStep === 3 && 'Review your request before submission'}
                 </p>
               </div>
-              
               <div className="bg-white rounded-lg border border-gray-200 p-8">
                 {renderStepContent()}
-                
                 <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
                   <Button variant="secondary" onClick={handleSaveDraft}>
                     Save Draft
                   </Button>
-                  
                   <div className="flex space-x-4">
                     {currentStep > 0 && (
                       <Button variant="secondary" onClick={handleBack}>
