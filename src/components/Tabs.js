@@ -1,27 +1,28 @@
-// Tabs for switching between 'To submit' and 'To approve'
+// Generic tabs component for navigation
 import React from 'react';
 
 /**
- * Tabs for request status
+ * Generic tabs component
+ * @param {Array} tabs - Array of tab objects with { label, key, count }
  * @param {string} activeTab - The active tab key
- * @param {object} counts - { toSubmit: number, toApprove: number }
  * @param {function} onTabClick - Callback for tab click
  */
-export default function Tabs({ activeTab = 'toSubmit', counts = { toSubmit: 0, toApprove: 0 }, onTabClick }) {
+export default function Tabs({ tabs = [], activeTab, onTabClick }) {
   return (
-    <div className="flex border-b mb-4">
-      <button
-        className={`py-2 px-4 font-semibold border-b-2 ${activeTab === 'toSubmit' ? 'text-gray-800 border-gray-800' : 'text-gray-500 border-transparent'}`}
-        onClick={() => onTabClick && onTabClick('toSubmit')}
-      >
-        To submit <span>{counts.toSubmit}</span>
-      </button>
-      <button
-        className={`py-2 px-4 font-semibold border-b-2 ${activeTab === 'toApprove' ? 'text-gray-800 border-gray-800' : 'text-gray-500 border-transparent'}`}
-        onClick={() => onTabClick && onTabClick('toApprove')}
-      >
-        To approve <span>{counts.toApprove}</span>
-      </button>
+    <div className="flex border-b border-gray-200">
+      {tabs.map(tab => (
+        <button
+          key={tab.key}
+          className={`py-3 px-4 font-medium border-b-2 transition-colors duration-150 ${
+            activeTab === tab.key 
+              ? 'text-blue-600 border-blue-600' 
+              : 'text-gray-500 border-transparent hover:text-gray-700'
+          }`}
+          onClick={() => onTabClick && onTabClick(tab.key)}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 } 

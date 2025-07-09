@@ -55,6 +55,17 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
       if (existingDraft) {
         setFormData(existingDraft);
         setIsNewVendor(existingDraft.supplier === 'new_vendor');
+        if (existingDraft.supplier === 'new_vendor') {
+          // Set newVendorName from vendor field if present
+          setNewVendorName(existingDraft.vendor || existingDraft.supplierInfo?.companyName || '');
+          // Ensure supplierInfo.companyName is set
+          if (!existingDraft.supplierInfo?.companyName && existingDraft.vendor) {
+            setFormData(prev => ({
+              ...prev,
+              supplierInfo: { ...prev.supplierInfo, companyName: existingDraft.vendor }
+            }));
+          }
+        }
       }
     }
     
@@ -147,7 +158,21 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   };
 
   const handleSaveDraft = () => {
-    saveDraft(formData);
+    // Determine vendor name
+    let vendor = '';
+    if (formData.supplier === 'new_vendor') {
+      vendor = formData.supplierInfo.companyName || 'New Vendor';
+    } else {
+      const supplierObj = SUPPLIERS.find(s => s.value === formData.supplier);
+      vendor = supplierObj ? supplierObj.label : formData.supplier;
+    }
+    const isNewVendorFlag = formData.supplier === 'new_vendor';
+    // Save draft with vendor and isNewVendor fields
+    saveDraft({
+      ...formData,
+      vendor,
+      isNewVendor: isNewVendorFlag,
+    });
     onNavigate('home');
   };
 
@@ -400,7 +425,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} />
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={process.env.PUBLIC_URL + '/logo192.png'} />
       <div className="flex-1 flex">
         <div className="w-64 bg-white border-r border-gray-200 p-6">
           <BackLink onClick={handleBack}>Back</BackLink>
@@ -408,7 +433,7 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
         </div>
         
         <div className="flex-1 flex flex-col">
-          <Header userName="YacovProcPayer" />
+          <Header sectionTitle="Purchase" companyName="YacovProcPayer" userAvatar={process.env.PUBLIC_URL + '/logo192.png'} userEmail="yacov.gorovoy@tipalti.com" />
           
           <div className="flex-1 p-8">
             <div className="max-w-4xl mx-auto">

@@ -1,24 +1,129 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import RequestCard from '../components/RequestCard';
 import DropdownMenu from '../components/DropdownMenu';
-import SearchInput from '../components/SearchInput';
+import Search from '../components/Search';
 import Tabs from '../components/Tabs';
-import { getDrafts, SAMPLE_REQUESTS } from '../utils/mockData';
+import Filter from '../components/Filter';
+import Typography from '../components/Typography';
+import { SkeletonList } from '../components/SkeletonLoader';
+import { localDB } from '../utils/localDB';
 
 export default function Home({ onNavigate }) {
-  const [activeTab, setActiveTab] = useState('toSubmit');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // State management
+  const [activeTab, setActiveTab] = useState('toDo');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [drafts, setDrafts] = useState([]);
-  const [requests] = useState(SAMPLE_REQUESTS);
+  const [searchResults, setSearchResults] = useState({ requests: [], bills: [], expenses: [], vendors: [], employees: [] });
+  const [records, setRecords] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [counts, setCounts] = useState({ 
+    toDo: { total: 0, toSubmit: 0, toApprove: 0 }, 
+    allItems: { total: 0, myItems: 0, activeOnly: 0 } 
+  });
 
+  // Load initial data and counts
   useEffect(() => {
-    // Load drafts from storage
-    const savedDrafts = getDrafts();
-    setDrafts(savedDrafts);
-  }, []);
+    loadRecords();
+    loadCounts();
+  }, [activeTab, activeFilter, search]);
+
+  // Search functionality
+  useEffect(() => {
+    if (search) {
+      const results = localDB.search(search);
+      setSearchResults(results);
+    } else {
+      setSearchResults({ requests: [], bills: [], expenses: [], vendors: [], employees: [] });
+    }
+  }, [search]);
+
+  const loadCounts = () => {
+    const newCounts = localDB.getCounts();
+    setCounts(newCounts);
+  };
+
+  const loadRecords = useCallback((resetPage = true) => {
+    setLoading(true);
+    
+    const currentPage = resetPage ? 1 : page;
+    
+    const result = localDB.getFiltered({
+      tab: activeTab,
+      filter: activeFilter,
+      search: search,
+      page: currentPage,
+      limit: 20
+    });
+    
+    if (resetPage) {
+      setRecords(result.records);
+      setPage(1);
+    } else {
+      setRecords(prev => [...prev, ...result.records]);
+    }
+    
+    setHasMore(result.hasMore);
+    setLoading(false);
+  }, [activeTab, activeFilter, search, page]);
+
+  const loadMore = () => {
+    if (hasMore && !loading) {
+      setPage(prev => prev + 1);
+      loadRecords(false);
+    }
+  };
+
+  const handleTabClick = (tabKey) => {
+    setActiveTab(tabKey);
+    setActiveFilter('all');
+    setSelectedIds([]);
+    setPage(1);
+  };
+
+  const handleFilterChange = (filterValue) => {
+    setActiveFilter(filterValue);
+    setSelectedIds([]);
+    setPage(1);
+  };
+
+  const handleRecordSelect = (recordId) => {
+    setSelectedIds(prev => 
+      prev.includes(recordId) 
+        ? prev.filter(id => id !== recordId)
+        : [...prev, recordId]
+    );
+  };
+
+  const handleBulkApprove = () => {
+    const updatedCount = localDB.bulkUpdate(selectedIds, { status: 'Approved' });
+    if (updatedCount > 0) {
+      setSelectedIds([]);
+      loadRecords();
+      loadCounts();
+    }
+  };
+
+  const handleRecordClick = (record) => {
+    if (record.status === 'Draft') {
+      onNavigate('request-form', { draftId: record.id });
+    }
+  };
+
+  const handleSearchResultClick = (item, type) => {
+    console.log('Search result clicked:', type, item);
+    // Handle navigation based on type
+  };
+
+  const handleSeeAllClick = (query) => {
+    console.log('See all results for:', query);
+    // Handle see all results
+  };
 
   const handleNewRequest = (type) => {
     if (type === 'purchase') {
@@ -28,22 +133,55 @@ export default function Home({ onNavigate }) {
     }
   };
 
-  const handleRequestClick = (request) => {
-    if (request.status === 'PENDING_APPROVAL') {
-      // Show read-only view for submitted requests
-      onNavigate('request-detail', { requestId: request.id });
+  const handleStatusClick = (record) => {
+    if (record.status === 'Draft') {
+      onNavigate('request-form', { draftId: record.id });
+    } else if (record.status === 'Pending approval') {
+      // Handle approve action
+      localDB.update(record.id, { status: 'Approved' });
+      loadRecords();
+      loadCounts();
     }
   };
 
-  const filteredRequests = requests.filter(req => 
-    req.company.toLowerCase().includes(search.toLowerCase()) ||
-    req.desc.toLowerCase().includes(search.toLowerCase())
-  );
+  // Get filter options based on active tab
+  const getFilterOptions = () => {
+    if (activeTab === 'toDo') {
+      return [
+        { label: 'All', value: 'all' },
+        { label: `To submit (${counts.toDo.toSubmit})`, value: 'toSubmit' },
+        { label: `To approve (${counts.toDo.toApprove})`, value: 'toApprove' },
+      ];
+    } else {
+      return [
+        { label: 'All', value: 'all' },
+        { label: `My items (${counts.allItems.myItems})`, value: 'myItems' },
+        { label: `Active only (${counts.allItems.activeOnly})`, value: 'activeOnly' },
+      ];
+    }
+  };
 
-  const filteredDrafts = drafts.filter(draft => 
-    draft.title?.toLowerCase().includes(search.toLowerCase()) ||
-    draft.description?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Get tab structure with counts
+  const tabs = [
+    {
+      label: `To do (${counts.toDo.total})`,
+      key: 'toDo',
+      count: counts.toDo.total
+    },
+    {
+      label: 'All my items',
+      key: 'allMyItems',
+      count: counts.allItems.total
+    }
+  ];
+
+  // Check if bulk actions should be shown
+  const showBulkActions = selectedIds.length > 0 && 
+    records.some(record => selectedIds.includes(record.id) && record.status === 'Pending approval');
+
+  // Logo fallback
+  const logoSrc = '/logo192.png';
+  const [logoError, setLogoError] = useState(false);
 
   const dropdownOptions = [
     {
@@ -72,96 +210,142 @@ export default function Home({ onNavigate }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} />
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={logoError ? undefined : logoSrc} />
       <div className="flex-1 flex flex-col">
-        <Header userName="YacovProcPayer" />
+        <Header sectionTitle="Home" companyName="Acme Corp" userAvatar={'https://ui-avatars.com/api/?name=User&background=E0E7EF&color=374151&size=64'} userEmail="yacov.gorovoy@acmecorp.com" />
         
         <div className="p-8">
-          {/* Header with New button */}
+          {/* Header with Welcome title, Search, and New button */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Home</h1>
-            <DropdownMenu
-              buttonContent={<span>+ New</span>}
-              open={dropdownOpen}
-              setOpen={setDropdownOpen}
-              options={dropdownOptions}
-              maxWidth="max-w-3xl"
-            />
+            <Typography variant="h1">Welcome</Typography>
+            <div className="flex items-center space-x-4">
+              <div className="max-w-md">
+                <Search
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  results={searchResults}
+                  onResultClick={handleSearchResultClick}
+                  onSeeAllClick={handleSeeAllClick}
+                  placeholder="Search items by name"
+                />
+              </div>
+              <DropdownMenu
+                buttonContent={<span>+ New</span>}
+                open={dropdownOpen}
+                setOpen={setDropdownOpen}
+                options={dropdownOptions}
+                maxWidth="max-w-3xl"
+              />
+            </div>
           </div>
 
           {/* Tabs */}
-          <Tabs
-            activeTab={activeTab}
-            counts={{ 
-              toSubmit: drafts.length, 
-              toApprove: requests.length 
-            }}
-            onTabClick={setActiveTab}
-          />
-
-          {/* Search */}
           <div className="mb-6">
-            <SearchInput
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search requests..."
+            <Tabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabClick={handleTabClick}
             />
           </div>
 
-          {/* Content based on active tab */}
-          {activeTab === 'toSubmit' ? (
-            <div className="space-y-4">
-              {filteredDrafts.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No drafts found. Create a new request to get started.</p>
-                </div>
+          {/* Filters - Show different filters based on active tab */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              {activeTab === 'toDo' ? (
+                <>
+                  <Filter
+                    label={`To submit ${counts.toDo.toSubmit}`}
+                    active={activeFilter === 'toSubmit'}
+                    onChange={() => handleFilterChange(activeFilter === 'toSubmit' ? 'all' : 'toSubmit')}
+                  />
+                  <Filter
+                    label={`To approve ${counts.toDo.toApprove}`}
+                    active={activeFilter === 'toApprove'}
+                    onChange={() => handleFilterChange(activeFilter === 'toApprove' ? 'all' : 'toApprove')}
+                  />
+                </>
               ) : (
-                filteredDrafts.map(draft => (
-                  <div key={draft.id} className="relative">
-                    <RequestCard
-                      company={draft.title || 'Untitled Request'}
-                      desc={draft.description || 'No description'}
-                      date={new Date(draft.updatedAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                      requester="You"
-                      amount={`USD ${draft.lineItems?.reduce((sum, item) => 
-                        sum + (parseFloat(item.amount) || 0) * (parseInt(item.quantity) || 1), 0
-                      ).toFixed(2) || '0.00'}`}
-                      status="DRAFT"
-                      onStatusClick={() => onNavigate('request-form', { draftId: draft.id })}
-                      badge="Draft"
-                      className="cursor-pointer"
-                    />
-                  </div>
-                ))
+                <Filter
+                  label="Filter"
+                  dropdown
+                  options={getFilterOptions()}
+                  value={activeFilter}
+                  onChange={handleFilterChange}
+                />
               )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredRequests.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No requests pending approval.</p>
+            <span className="text-sm text-gray-500">Sorted by date submitted</span>
+          </div>
+
+          {/* Bulk Actions */}
+          {showBulkActions && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-blue-700">
+                  {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
+                </span>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 rounded"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleBulkApprove}
+                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Approve selected
+                  </button>
                 </div>
-              ) : (
-                filteredRequests.map(request => (
-                  <RequestCard
-                    key={request.id}
-                    company={request.company}
-                    desc={request.desc}
-                    date={request.date}
-                    requester={request.requester}
-                    amount={request.amount}
-                    status={request.status}
-                    onStatusClick={() => handleRequestClick(request)}
-                    className="cursor-pointer"
-                  />
-                ))
-              )}
+              </div>
             </div>
           )}
+
+          {/* Records List */}
+          <div className="space-y-4">
+            {loading && records.length === 0 ? (
+              <SkeletonList count={5} />
+            ) : records.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p>No records found.</p>
+              </div>
+            ) : (
+              <>
+                {records.map(record => (
+                  <RequestCard
+                    key={record.id}
+                    vendor={record.vendor}
+                    isNewVendor={record.isNewVendor}
+                    title={record.title}
+                    date={record.date}
+                    requester={record.requester}
+                    amount={record.amount}
+                    status={record.statusLabel}
+                    onStatusClick={() => handleStatusClick(record)}
+                    selected={selectedIds.includes(record.id)}
+                    onSelect={() => handleRecordSelect(record.id)}
+                    badge={record.badge}
+                    badgeColor={record.badgeColor}
+                    onCardClick={() => handleRecordClick(record)}
+                  />
+                ))}
+                
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="text-center pt-8">
+                    <button
+                      onClick={loadMore}
+                      disabled={loading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {loading ? 'Loading...' : 'Load More'}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

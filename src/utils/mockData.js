@@ -139,38 +139,252 @@ export const generateAIResponse = (userInput) => {
   }
 };
 
-// Sample submitted requests for the home page
-export const SAMPLE_REQUESTS = [
+// Sample request records for the home page that match the UI screenshots
+export const SAMPLE_HOME_REQUESTS = [
+  // To Submit (Draft) requests
   {
     id: 'req_001',
-    company: 'Microsoft Corporation',
-    desc: 'Office 365 licenses for new hires',
-    date: 'Jun 24, 2025',
-    requester: 'Sarah Johnson',
-    amount: 'USD 1,200.00',
-    status: 'PENDING_APPROVAL',
-    statusColor: 'yellow'
+    type: 'request',
+    vendor: 'Demo',
+    title: 'Demo',
+    amount: 'USD 0.00',
+    date: 'Jul 09, 2025',
+    requester: 'Luca.M',
+    status: 'Draft',
+    statusLabel: 'OPEN',
+    badge: 'New vendor',
+    badgeColor: 'green',
+    isNewVendor: true,
+    createdAt: '2025-07-09T10:00:00.000Z',
+    updatedAt: '2025-07-09T10:00:00.000Z'
   },
   {
     id: 'req_002',
-    company: 'Staples Inc.',
-    desc: 'Office supplies for Q3',
-    date: 'Jun 23, 2025',
-    requester: 'Mike Chen',
-    amount: 'USD 450.00',
-    status: 'PENDING_APPROVAL',
-    statusColor: 'yellow'
+    type: 'request',
+    vendor: 'Beer Bazaar Ltd.',
+    title: 'tst',
+    amount: 'USD 100.00',
+    date: 'Jul 01, 2025',
+    requester: 'Luca.M',
+    status: 'Draft',
+    statusLabel: 'OPEN',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-07-01T10:00:00.000Z',
+    updatedAt: '2025-07-01T10:00:00.000Z'
   },
   {
     id: 'req_003',
-    company: 'Adobe Inc.',
-    desc: 'Creative Suite licenses',
-    date: 'Jun 22, 2025',
-    requester: 'Lisa Rodriguez',
-    amount: 'USD 2,800.00',
-    status: 'PENDING_APPROVAL',
-    statusColor: 'yellow'
+    type: 'request',
+    vendor: 'Beer Bazaar Ltd.',
+    title: '$ of budget',
+    amount: 'USD 150.00',
+    date: 'Jun 24, 2025',
+    requester: 'Luca.M',
+    status: 'Draft',
+    statusLabel: 'OPEN',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-06-24T10:00:00.000Z',
+    updatedAt: '2025-06-24T10:00:00.000Z'
+  },
+  
+  // To Approve (Pending approval) requests
+  {
+    id: 'req_004',
+    type: 'request',
+    vendor: 'Beer Bazaar Ltd.',
+    title: 'budget again and again',
+    amount: 'USD 1,000.00',
+    date: 'Jul 01, 2025',
+    requester: 'Jacob.C',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-07-01T09:00:00.000Z',
+    updatedAt: '2025-07-01T09:00:00.000Z'
+  },
+  {
+    id: 'req_005',
+    type: 'request',
+    vendor: 'Beer Bazaar Ltd.',
+    title: 'budgeting our life out',
+    amount: 'USD 5,011.00',
+    date: 'Jul 01, 2025',
+    requester: 'Jacob.C',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-07-01T08:00:00.000Z',
+    updatedAt: '2025-07-01T08:00:00.000Z'
+  },
+  
+  // Additional "All my items" requests
+  {
+    id: 'req_006',
+    type: 'request',
+    vendor: 'Slackk',
+    title: 'Test',
+    amount: 'USD 100.00',
+    date: 'Jul 02, 2025',
+    requester: 'Luca.M',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: 'Pending approval',
+    badgeColor: 'blue',
+    isNewVendor: false,
+    createdAt: '2025-07-02T10:00:00.000Z',
+    updatedAt: '2025-07-02T10:00:00.000Z'
+  },
+  {
+    id: 'req_007',
+    type: 'request',
+    vendor: 'Sweet Tooth Ltd',
+    title: 'Pastries for pride month',
+    amount: 'USD 150.00',
+    date: 'Jun 26, 2025',
+    requester: 'Luca.M',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: 'Pending approval',
+    badgeColor: 'blue',
+    isNewVendor: false,
+    createdAt: '2025-06-26T10:00:00.000Z',
+    updatedAt: '2025-06-26T10:00:00.000Z'
+  },
+  {
+    id: 'req_008',
+    type: 'request',
+    vendor: 'Customize the field',
+    title: 'Test',
+    amount: 'USD 112.00',
+    date: 'Jul 08, 2025',
+    requester: 'Luca.M',
+    status: 'Completed',
+    statusLabel: 'COMPLETED',
+    badge: 'Completed',
+    badgeColor: 'green',
+    isNewVendor: false,
+    createdAt: '2025-07-08T10:00:00.000Z',
+    updatedAt: '2025-07-08T10:00:00.000Z'
+  },
+  
+  // Additional requests to reach proper counts
+  {
+    id: 'req_009',
+    type: 'request',
+    vendor: 'Tech Solutions Inc',
+    title: 'Software licenses',
+    amount: 'USD 2,500.00',
+    date: 'Jul 03, 2025',
+    requester: 'Mike.D',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-07-03T10:00:00.000Z',
+    updatedAt: '2025-07-03T10:00:00.000Z'
+  },
+  {
+    id: 'req_010',
+    type: 'request',
+    vendor: 'Office Supplies Corp',
+    title: 'Monthly office supplies',
+    amount: 'USD 750.00',
+    date: 'Jun 28, 2025',
+    requester: 'Sarah.J',
+    status: 'Pending approval',
+    statusLabel: 'APPROVE',
+    badge: null,
+    badgeColor: null,
+    isNewVendor: false,
+    createdAt: '2025-06-28T10:00:00.000Z',
+    updatedAt: '2025-06-28T10:00:00.000Z'
   }
+];
+
+// Generate additional draft requests to reach count of 21
+const generateAdditionalDrafts = () => {
+  const additionalDrafts = [];
+  const vendors = ['Microsoft Corp', 'Adobe Inc', 'Zoom Technologies', 'Salesforce Inc', 'AWS Services', 'Google Cloud', 'Oracle Corp', 'IBM Solutions', 'Cisco Systems', 'Apple Inc', 'Dell Technologies'];
+  const titles = ['Software renewal', 'License upgrade', 'Service contract', 'Hardware purchase', 'Training materials', 'Consulting services', 'Cloud storage', 'Development tools', 'Security software', 'Maintenance contract'];
+  
+  for (let i = 11; i <= 21; i++) {
+    const vendor = vendors[Math.floor(Math.random() * vendors.length)];
+    const title = titles[Math.floor(Math.random() * titles.length)];
+    const amount = Math.floor(Math.random() * 3000) + 200;
+    const dayOffset = Math.floor(Math.random() * 30) + 1;
+    const date = new Date(Date.now() - dayOffset * 24 * 60 * 60 * 1000);
+    
+    additionalDrafts.push({
+      id: `req_${i.toString().padStart(3, '0')}`,
+      type: 'request',
+      vendor,
+      title,
+      amount: `USD ${amount.toLocaleString()}.00`,
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      requester: 'Luca.M',
+      status: 'Draft',
+      statusLabel: 'OPEN',
+      badge: null,
+      badgeColor: null,
+      isNewVendor: false,
+      createdAt: date.toISOString(),
+      updatedAt: date.toISOString()
+    });
+  }
+  
+  return additionalDrafts;
+};
+
+// Generate additional pending approval requests to reach count of 26
+const generateAdditionalPendingApproval = () => {
+  const additionalPending = [];
+  const vendors = ['Marketing Solutions', 'HR Services Ltd', 'Facilities Management', 'Legal Services Inc', 'Accounting Corp', 'IT Support Group', 'Security Solutions', 'Training Academy', 'Catering Services', 'Cleaning Company', 'Transport Services', 'Insurance Group', 'Banking Services', 'Telecommunications', 'Energy Provider', 'Consulting Firm'];
+  const titles = ['Monthly service', 'Annual contract', 'Project delivery', 'Support package', 'Maintenance agreement', 'Professional services', 'Equipment rental', 'Training program', 'Consulting project', 'Service upgrade'];
+  const requesters = ['Jacob.C', 'Mike.D', 'Sarah.J', 'Lisa.R', 'Tom.W', 'Emma.K', 'David.P', 'Anna.S'];
+  
+  for (let i = 11; i <= 26; i++) {
+    const vendor = vendors[Math.floor(Math.random() * vendors.length)];
+    const title = titles[Math.floor(Math.random() * titles.length)];
+    const requester = requesters[Math.floor(Math.random() * requesters.length)];
+    const amount = Math.floor(Math.random() * 8000) + 500;
+    const dayOffset = Math.floor(Math.random() * 20) + 1;
+    const date = new Date(Date.now() - dayOffset * 24 * 60 * 60 * 1000);
+    
+    additionalPending.push({
+      id: `req_${(i + 100).toString().padStart(3, '0')}`,
+      type: 'request',
+      vendor,
+      title,
+      amount: `USD ${amount.toLocaleString()}.00`,
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      requester,
+      status: 'Pending approval',
+      statusLabel: 'APPROVE',
+      badge: null,
+      badgeColor: null,
+      isNewVendor: false,
+      createdAt: date.toISOString(),
+      updatedAt: date.toISOString()
+    });
+  }
+  
+  return additionalPending;
+};
+
+// Combined sample requests with proper counts
+export const ALL_SAMPLE_REQUESTS = [
+  ...SAMPLE_HOME_REQUESTS,
+  ...generateAdditionalDrafts(),
+  ...generateAdditionalPendingApproval()
 ];
 
 // Storage functions (re-exported from storage.js)

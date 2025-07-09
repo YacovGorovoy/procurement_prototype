@@ -15,9 +15,9 @@ export default function NewRequestOptions({ onNavigate }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} />
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={process.env.PUBLIC_URL + '/logo192.png'} />
       <div className="flex-1 flex flex-col">
-        <Header userName="YacovProcPayer" />
+        <Header sectionTitle="New Request" companyName="YacovProcPayer" userAvatar={process.env.PUBLIC_URL + '/logo192.png'} userEmail="yacov.gorovoy@tipalti.com" />
         
         <div className="p-8 max-w-4xl mx-auto w-full">
           <BackLink onClick={() => onNavigate('home')}>Back to Home</BackLink>
