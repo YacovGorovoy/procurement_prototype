@@ -9,6 +9,7 @@ import FormSelect from '../components/FormSelect';
 import FormTextarea from '../components/FormTextarea';
 import LineItemsTable from '../components/LineItemsTable';
 import Badge from '../components/Badge';
+import SystemMessage from '../components/SystemMessage';
 import { 
   SUPPLIERS, 
   PURCHASE_TYPES, 
@@ -23,6 +24,7 @@ import {
 import { localDB } from '../utils/localDB';
 
 export default function RequestForm({ onNavigate, draftId, aiData }) {
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     id: draftId || generateDraftId(),
@@ -49,6 +51,8 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   const [errors, setErrors] = useState({});
   const [isNewVendor, setIsNewVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
+  const [showAIFilling, setShowAIFilling] = useState(!!aiData);
+  const [showAISuccess, setShowAISuccess] = useState(false);
 
   useEffect(() => {
     // Load existing draft if draftId provided
@@ -100,6 +104,21 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
     // Save current draft to session storage
     saveCurrentDraft(formData);
   }, [formData]);
+
+  useEffect(() => {
+    if (aiData) {
+      setShowAIFilling(true);
+      setShowAISuccess(false);
+      const timer = setTimeout(() => {
+        setShowAIFilling(false);
+        setShowAISuccess(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowAIFilling(false);
+      setShowAISuccess(false);
+    }
+  }, [aiData]);
 
   const steps = [
     { label: 'Purchase details', active: currentStep === 0, completed: currentStep > 0 },
@@ -465,9 +484,9 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={process.env.PUBLIC_URL + '/logo192.png'} />
-      <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex flex-row min-h-screen">
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={process.env.PUBLIC_URL + '/logo192.png'} expanded={sidebarExpanded} setExpanded={setSidebarExpanded} />
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarExpanded ? 'ml-48' : 'ml-16'}`}> {/* dynamic margin */}
         {/* Header bar spanning full width */}
         <Header sectionTitle="Create purchase request" />
         {/* Main content: Stepper left, form right */}
@@ -479,37 +498,50 @@ export default function RequestForm({ onNavigate, draftId, aiData }) {
           </div>
           {/* Form content on the right */}
           <div className="flex-1 flex flex-col">
-            <div className="max-w-3xl">
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                  {steps[currentStep]?.label}
-                </h1>
-                <p className="text-gray-600">
-                  {currentStep === 0 && 'Enter the basic details of your purchase request'}
-                  {currentStep === 1 && 'Provide information about the new supplier'}
-                  {currentStep === 2 && 'Complete security assessment for the new vendor'}
-                  {currentStep === 3 && 'Review your request before submission'}
-                </p>
+            {/* AI System Messages */}
+            {showAIFilling && (
+              <div className="mb-4">
+                <SystemMessage type="informative">
+                  Tipalti AI is filling in your request
+                </SystemMessage>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-8">
-                {renderStepContent()}
-                <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                  <Button variant="secondary" onClick={handleSaveDraft}>
-                    Save Draft
-                  </Button>
-                  <div className="flex space-x-4">
-                    {currentStep > 0 && (
-                      <Button variant="secondary" onClick={handleBack}>
-                        Back
-                      </Button>
-                    )}
-                    <Button 
-                      variant="primary" 
-                      onClick={handleNext}
-                    >
-                      {currentStep === steps.length - 1 ? 'Submit Request' : 'Next'}
+            )}
+            {showAISuccess && (
+              <div className="mb-4">
+                <SystemMessage type="positive">
+                  Purchase request was generated with AI, please review before submitting.
+                </SystemMessage>
+              </div>
+            )}
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                {steps[currentStep]?.label}
+              </h1>
+              <p className="text-gray-600">
+                {currentStep === 0 && 'Enter the basic details of your purchase request'}
+                {currentStep === 1 && 'Provide information about the new supplier'}
+                {currentStep === 2 && 'Complete security assessment for the new vendor'}
+                {currentStep === 3 && 'Review your request before submission'}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-8">
+              {renderStepContent()}
+              <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                <Button variant="secondary" onClick={handleSaveDraft}>
+                  Save Draft
+                </Button>
+                <div className="flex space-x-4">
+                  {currentStep > 0 && (
+                    <Button variant="secondary" onClick={handleBack}>
+                      Back
                     </Button>
-                  </div>
+                  )}
+                  <Button 
+                    variant="primary" 
+                    onClick={handleNext}
+                  >
+                    {currentStep === steps.length - 1 ? 'Submit Request' : 'Next'}
+                  </Button>
                 </div>
               </div>
             </div>

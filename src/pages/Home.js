@@ -11,6 +11,7 @@ import { SkeletonList } from '../components/SkeletonLoader';
 import { localDB } from '../utils/localDB';
 
 export default function Home({ onNavigate }) {
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   // State management
   const [activeTab, setActiveTab] = useState('toDo');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -112,6 +113,8 @@ export default function Home({ onNavigate }) {
   const handleRecordClick = (record) => {
     if (record.status === 'Draft') {
       onNavigate('request-form', { draftId: record.id });
+    } else if (record.status === 'Pending approval' || record.status === 'Completed') {
+      onNavigate('request-approval', { requestId: record.id });
     }
   };
 
@@ -127,7 +130,7 @@ export default function Home({ onNavigate }) {
 
   const handleNewRequest = (type) => {
     if (type === 'purchase') {
-      onNavigate('new-request-options');
+      onNavigate('ai-prompt');
     } else if (type === 'expense') {
       onNavigate('expense-form');
     }
@@ -209,9 +212,9 @@ export default function Home({ onNavigate }) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} logo={logoError ? undefined : logoSrc} />
-      <div className="flex-1 flex flex-col">
+    <div className="flex flex-row min-h-screen">
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} expanded={sidebarExpanded} setExpanded={setSidebarExpanded} />
+      <div className={`flex flex-col flex-1 ${sidebarExpanded ? 'ml-48' : 'ml-16'}`}>
         <Header sectionTitle="Home" companyName="Acme Corp" userAvatar={'https://ui-avatars.com/api/?name=User&background=E0E7EF&color=374151&size=64'} userEmail="yacov.gorovoy@acmecorp.com" />
         
         <div className="p-8">

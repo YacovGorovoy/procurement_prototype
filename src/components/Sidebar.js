@@ -44,10 +44,9 @@ const navItems = [
  * @param {string} active - The active nav item key
  * @param {function} onNavClick - Callback for nav item click
  */
-export default function Sidebar({ active = 'home', onNavClick }) {
-  const [expanded, setExpanded] = useState(true);
+export default function Sidebar({ active = 'home', onNavClick, expanded, setExpanded }) {
   return (
-    <aside className={`sidebar ${expanded ? 'w-48' : 'w-16'} transition-all duration-200 flex flex-col items-center py-4 space-y-6 text-white bg-[#2c3e50] h-screen justify-between`}>
+    <aside className={`sidebar fixed left-0 top-0 h-screen ${expanded ? 'w-48' : 'w-16'} transition-all duration-200 flex flex-col items-center py-4 space-y-6 text-white bg-[#2c3e50] justify-between`}>
       <div className="flex flex-col items-center w-full">
         {/* Hamburger menu and logo */}
         <div className="flex items-center w-full px-2 mb-4">

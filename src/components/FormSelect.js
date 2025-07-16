@@ -1,175 +1,248 @@
+// FormSelect for dropdowns
 import React, { useState, useRef, useEffect } from 'react';
+import Button from './Button';
 
 /**
- * FormSelect: Custom, accessible, searchable dropdown
+ * FormSelect for dropdowns
  * @param {string} label - Label text
  * @param {string} value - Selected value
- * @param {function} onChange - Change handler (value)
- * @param {Array} options - Array of { value, label }
+ * @param {function} onChange - Change handler
+ * @param {array} options - Array of {label, value} objects
  * @param {string} placeholder - Placeholder text
  * @param {boolean} required - Required field
+ * @param {string} variant - 'editable' or 'inline' (default: 'editable')
+ * @param {boolean} readOnly - Read-only state (for inline variant)
+ * @param {function} onSave - Save handler (for inline variant)
+ * @param {function} onCancel - Cancel handler (for inline variant)
  * @param {string} className - Additional classes
- * @param {string} searchPlaceholder - Placeholder for search input
- * @param {function} action - Optional action row: { label, onClick }
- * @param {boolean} disabled - Disabled state
- * @param {string} selectedDisplay - Custom selected value display
- * @param {function} onActionWithSearch - Optional callback for action, receives current search value
  */
 export default function FormSelect({
   label,
   value,
   onChange,
   options = [],
-  placeholder = '',
+  placeholder = "Select an option",
   required = false,
-  className = '',
-  searchPlaceholder = 'Search...',
-  action, // { label, onClick }
-  disabled = false,
-  selectedDisplay, // NEW: custom selected value display
-  onActionWithSearch, // NEW: callback for action with search value
-  ...props
+  variant = 'editable',
+  readOnly = false,
+  onSave,
+  onCancel,
+  className = ''
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [highlighted, setHighlighted] = useState(0);
-  const inputRef = useRef();
-  const listRef = useRef();
-  const filtered = options.filter(opt =>
-    opt.label.toLowerCase().includes(search.toLowerCase())
-  );
-  const selectedOption = options.find(opt => opt.value === value);
-  const containerRef = useRef();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const selectRef = useRef(null);
 
+  // Update edit value when prop value changes
   useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus();
-    if (!open) setSearch('');
-    setHighlighted(0);
-  }, [open]);
+    setEditValue(value);
+  }, [value]);
 
+  // Handle click outside to save
   useEffect(() => {
-    if (open && listRef.current && filtered.length > 0) {
-      const el = listRef.current.children[highlighted];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    }
-  }, [highlighted, open, filtered]);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setOpen(false);
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        if (isEditing) {
+          handleSave();
+        }
+        setIsOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+    };
 
-  const handleSelect = (val) => {
-    onChange && onChange(val);
-    setOpen(false);
-    setSearch('');
+    if (isOpen || isEditing) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, isEditing, editValue]);
+
+  const handleFieldClick = () => {
+    if (variant === 'inline' && readOnly && !isEditing) {
+      setIsEditing(true);
+      setEditValue(value);
+      // Auto-open dropdown when entering edit mode
+      setIsOpen(true);
+    } else if (variant === 'editable' || (variant === 'inline' && isEditing)) {
+      setIsOpen(!isOpen);
+    }
+  };
+
+  const handleOptionClick = (optionValue) => {
+    if (variant === 'inline' && isEditing) {
+      setEditValue(optionValue);
+      // Auto-save when option is selected in inline editing mode
+      if (optionValue !== value) {
+        onChange && onChange(optionValue);
+        onSave && onSave(optionValue);
+      }
+      setIsEditing(false);
+    } else {
+      onChange && onChange(optionValue);
+    }
+    setIsOpen(false);
+  };
+
+  const handleSave = () => {
+    if (editValue !== value) {
+      onChange && onChange(editValue);
+      onSave && onSave(editValue);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(value);
+    setIsEditing(false);
+    onCancel && onCancel();
   };
 
   const handleKeyDown = (e) => {
-    if (!open) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setHighlighted(h => Math.min(h + 1, filtered.length - 1 + (action ? 1 : 0)));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHighlighted(h => Math.max(h - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (highlighted < filtered.length) {
-        handleSelect(filtered[highlighted].value);
-      } else if (action && highlighted === filtered.length) {
-        action.onClick && action.onClick();
-        setOpen(false);
-      }
+    if (e.key === 'Enter') {
+      handleSave();
     } else if (e.key === 'Escape') {
-      setOpen(false);
+      handleCancel();
     }
   };
 
-  return (
-    <div className={className + ' relative'} ref={containerRef}>
-      {label && (
-        <label className="block mb-1 font-medium text-gray-600">
-          {label}{required && ' *'}
-        </label>
-      )}
-      <button
-        type="button"
-        className={`w-full text-left border border-gray-300 rounded px-3 py-2 bg-white focus:ring-2 focus:ring-blue-200 flex items-center justify-between ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => !disabled && setOpen(o => !o)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        {...props}
+  const getSelectedLabel = () => {
+    const option = options.find(opt => opt.value === (isEditing ? editValue : value));
+    return option ? option.label : '';
+  };
+
+  // Determine select classes based on state
+  const getSelectClasses = () => {
+    if (variant === 'inline') {
+      if (readOnly && !isEditing) {
+        return "w-full border !border-gray-300 rounded-xl px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition text-left";
+      } else if (isEditing) {
+        return "w-full border !border-[#6C70FF] rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#B4B8FF] transition text-left";
+      }
+    }
+    return "w-full border !border-gray-300 rounded-xl px-4 py-3 bg-white focus:!border-[#6C70FF] focus:outline-none focus:ring-2 focus:ring-[#B4B8FF] hover:bg-gray-50 transition text-left";
+  };
+
+  const renderInlineSelect = () => {
+    return (
+      <div 
+        className={`relative ${isHovered && readOnly && !isEditing ? 'group' : ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        ref={selectRef}
       >
-        <span className={selectedOption ? '' : 'text-gray-400'}>
-          {selectedDisplay ? selectedDisplay : (selectedOption ? selectedOption.label : placeholder)}
-        </span>
-        <svg className={`w-5 h-5 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg">
-          <input
-            ref={inputRef}
-            type="text"
-            className="w-full px-3 py-2 border-b border-gray-100 focus:outline-none"
-            placeholder={searchPlaceholder}
-            value={search}
-            onChange={e => { setSearch(e.target.value); setHighlighted(0); }}
-            onKeyDown={handleKeyDown}
-            aria-label="Search options"
-          />
-          <ul
-            ref={listRef}
-            role="listbox"
-            tabIndex={-1}
-            className="max-h-56 overflow-auto"
-            aria-activedescendant={highlighted}
-          >
-            {filtered.length === 0 && (
-              <li className="px-3 py-2 text-gray-400 select-none" role="option" aria-disabled="true">
-                No results
-              </li>
-            )}
-            {filtered.map((opt, idx) => (
-              <li
-                key={opt.value}
-                id={`option-${idx}`}
-                role="option"
-                aria-selected={value === opt.value}
-                className={`px-3 py-2 cursor-pointer ${highlighted === idx ? 'bg-blue-50' : ''} ${value === opt.value ? 'font-semibold text-blue-700' : ''}`}
-                onMouseEnter={() => setHighlighted(idx)}
-                onMouseDown={e => { e.preventDefault(); handleSelect(opt.value); }}
-              >
-                {opt.label}
-              </li>
-            ))}
-            {action && (
-              <li
-                key="action"
-                role="option"
-                aria-selected={false}
-                className={`px-3 py-2 cursor-pointer border-t border-gray-100 text-blue-700 font-semibold ${highlighted === filtered.length ? 'bg-blue-50' : ''}`}
-                onMouseEnter={() => setHighlighted(filtered.length)}
-                onMouseDown={e => { e.preventDefault();
-                  if (onActionWithSearch) onActionWithSearch(search);
-                  action.onClick && action.onClick();
-                  setOpen(false);
-                }}
-              >
-                {action.label}
-              </li>
-            )}
-          </ul>
+        <div
+          className={getSelectClasses()}
+          onClick={handleFieldClick}
+          onKeyDown={isEditing ? handleKeyDown : undefined}
+          tabIndex={isEditing ? 0 : -1}
+        >
+          <span className={getSelectedLabel() ? 'text-gray-900' : 'text-gray-500'}>
+            {getSelectedLabel() || placeholder}
+          </span>
+          {/* Only show chevron when editing or in editable mode */}
+          {(isEditing || variant === 'editable') && (
+            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
         </div>
-      )}
+        
+        {/* Pencil icon on hover (read-only state) */}
+        {variant === 'inline' && isHovered && readOnly && !isEditing && (
+          <button
+            onClick={handleFieldClick}
+            className="absolute right-10 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        )}
+
+        {/* X and V buttons (editing state) */}
+        {variant === 'inline' && isEditing && (
+          <div className="absolute -bottom-10 right-0 flex space-x-2">
+            <button
+              onClick={handleCancel}
+              className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button
+              onClick={handleSave}
+              className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Dropdown options */}
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleOptionClick(option.value)}
+                className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
+                  option.value === (isEditing ? editValue : value) ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderEditableSelect = () => {
+    return (
+      <div className="relative" ref={selectRef}>
+        <div
+          className={getSelectClasses()}
+          onClick={handleFieldClick}
+        >
+          <span className={getSelectedLabel() ? 'text-gray-900' : 'text-gray-500'}>
+            {getSelectedLabel() || placeholder}
+          </span>
+          <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+
+        {/* Dropdown options */}
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleOptionClick(option.value)}
+                className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
+                  option.value === value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className={className}>
+      {label && <label className="block mb-1 font-medium text-gray-600">{label}{required && ' *'}</label>}
+      {variant === 'inline' ? renderInlineSelect() : renderEditableSelect()}
     </div>
   );
 } 

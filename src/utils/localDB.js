@@ -11,7 +11,25 @@ const initializeDB = () => {
     localStorage.setItem(DB_KEY, JSON.stringify(sampleData));
     return sampleData;
   }
-  return JSON.parse(existingData);
+  
+  // Check if existing data has the new structure
+  const parsedData = JSON.parse(existingData);
+  const hasNewStructure = parsedData.length > 0 && parsedData[0].approvalFlow && parsedData[0].requestNumber;
+  
+  if (!hasNewStructure) {
+    // Force refresh with new structure
+    const sampleData = ALL_SAMPLE_REQUESTS;
+    localStorage.setItem(DB_KEY, JSON.stringify(sampleData));
+    return sampleData;
+  }
+  
+  return parsedData;
+};
+
+// Force refresh function to clear and reinitialize data
+export const forceRefreshData = () => {
+  localStorage.removeItem(DB_KEY);
+  return initializeDB();
 };
 
 // CRUD Operations

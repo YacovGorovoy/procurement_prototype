@@ -3,147 +3,105 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import BackLink from '../components/BackLink';
-import AILoadingSpinner from '../components/AILoadingSpinner';
-import { generateAIResponse } from '../utils/mockData';
+import AIIcon from '../components/AIIcon';
+import AIStarsAnimation from '../components/AIStarsAnimation';
 
 export default function AIPromptScreen({ onNavigate }) {
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [aiResponse, setAiResponse] = useState(null);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!prompt.trim()) return;
-    
     setIsProcessing(true);
-    
-    // Simulate AI processing delay
     setTimeout(() => {
+      const { generateAIResponse } = require('../utils/mockData');
       const response = generateAIResponse(prompt);
-      setAiResponse(response);
-      setIsProcessing(false);
-    }, 3000);
+      onNavigate('request-form', { aiData: response });
+    }, 2000);
   };
 
-  const handleContinue = () => {
-    if (aiResponse) {
-      // Navigate to form with AI response data
-      onNavigate('request-form', { aiData: aiResponse });
-    }
-  };
-
-  const handleManualEntry = () => {
+  const handleManualEntry = (e) => {
+    e.preventDefault();
     onNavigate('request-form');
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} />
-      <div className="flex-1 flex flex-col">
-        <Header userName="YacovProcPayer" />
-        
-        <div className="p-8 max-w-4xl mx-auto w-full">
-          <BackLink onClick={() => onNavigate('new-request-options')}>Back to options</BackLink>
-          
-          <div className="mt-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Tell us what you need</h1>
-            <p className="text-gray-600 mb-8">
-              Describe your purchase request in natural language. Our AI will help populate the form for you.
-            </p>
-            
-            {!isProcessing && !aiResponse && (
-              <div className="bg-white rounded-lg border border-gray-200 p-8">
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Describe your request
-                  </label>
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g., I need 25 Zoom Pro licenses for our sales team to conduct customer meetings with extended duration and recording capabilities."
-                    className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 resize-none"
-                  />
-                </div>
-                
-                <div className="flex space-x-4">
-                  <Button 
-                    variant="primary" 
-                    onClick={handleSubmit}
-                    disabled={!prompt.trim()}
-                  >
-                    Process with AI
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    onClick={handleManualEntry}
-                  >
-                    Skip to Manual Entry
-                  </Button>
-                </div>
-                
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">Examples:</h3>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• "I need 25 Zoom Pro licenses for our sales team"</li>
-                    <li>• "Office supplies for new office setup including furniture and desk organizers"</li>
-                    <li>• "Marketing agency services for brand redesign and new materials"</li>
-                    <li>• "8 high-performance laptops for the development team"</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-            
-            {isProcessing && (
-              <div className="bg-white rounded-lg border border-gray-200 p-8">
-                <AILoadingSpinner message="AI is analyzing your request and populating the form..." />
-              </div>
-            )}
-            
-            {aiResponse && !isProcessing && (
-              <div className="bg-white rounded-lg border border-gray-200 p-8 fade-in">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-800">AI Analysis Complete</h2>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                  <h3 className="font-medium text-gray-800 mb-4">Here's what I found:</h3>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Title:</span> {aiResponse.title}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Supplier:</span> {aiResponse.supplier}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Type:</span> {aiResponse.purchaseType}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Description:</span> {aiResponse.description}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Items:</span> {aiResponse.lineItems.length} line item(s)
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-4">
-                  <Button variant="primary" onClick={handleContinue}>
-                    Continue with AI Data
-                  </Button>
-                  <Button variant="secondary" onClick={() => setAiResponse(null)}>
-                    Try Again
-                  </Button>
-                  <Button variant="secondary" onClick={handleManualEntry}>
-                    Start Manual Entry
-                  </Button>
-                </div>
-              </div>
-            )}
+    <div className="flex flex-row min-h-screen">
+      <Sidebar active="home" onNavClick={key => console.log('Nav:', key)} expanded={sidebarExpanded} setExpanded={setSidebarExpanded} />
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarExpanded ? 'ml-48' : 'ml-16'}`}>
+        <Header sectionTitle="Create a purchase request" />
+        <div className="flex-1 flex flex-col items-center justify-center relative">
+          <div className="absolute left-0 top-0 mt-8 ml-8">
+            <BackLink onClick={() => onNavigate('home')}>Back</BackLink>
           </div>
+          <form
+            className="w-full flex flex-col items-center justify-center"
+            style={{ minHeight: '60vh' }}
+            onSubmit={handleSubmit}
+            autoComplete="off"
+          >
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">What do you want to purchase?</h1>
+              <div className="flex items-center justify-center gap-2 text-gray-600 text-lg font-normal">
+                <AIIcon size={22} className="text-blue-900" />
+                <span>Detail your purchase and we’ll generate your request form.</span>
+              </div>
+            </div>
+            <div className="w-full max-w-xl">
+              <div className="relative">
+                <textarea
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  placeholder="E.g., 25 premium Zoom seats for new hires, $15 each."
+                  disabled={isProcessing}
+                  className="w-full h-28 rounded-2xl border border-blue-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200 shadow-sm p-6 pr-16 text-lg transition disabled:bg-gray-50 disabled:text-gray-400 resize-none outline-none"
+                  style={{ boxShadow: '0 2px 12px 0 rgba(80, 112, 255, 0.07)' }}
+                  tabIndex={1}
+                  aria-label="Describe your purchase request"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
+                      handleSubmit(e);
+                    }
+                  }}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {isProcessing ? (
+                    <AIStarsAnimation size={32} className="text-blue-900" />
+                  ) : (
+                    <button
+                      type="submit"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${prompt.trim() ? 'bg-yellow-400 hover:bg-yellow-500 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                      disabled={!prompt.trim() || isProcessing}
+                      tabIndex={2}
+                      aria-label="Submit purchase request prompt"
+                    >
+                      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              {isProcessing && (
+                <div className="flex items-center justify-center gap-2 mt-4 text-blue-900 text-base font-medium animate-pulse">
+                  <AIStarsAnimation size={20} className="text-blue-900" />
+                  <span>Analyzing your request…</span>
+                </div>
+              )}
+              <div className="flex justify-center mt-6">
+                <button
+                  type="button"
+                  className="text-blue-700 hover:underline text-base font-medium"
+                  onClick={handleManualEntry}
+                  tabIndex={3}
+                >
+                  Manually add purchase details
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
